@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculateur de Réduction d'Impôts - Mécénat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        .main-title {
+            color: #1a237e;  /* Couleur darkblue de Bootstrap */
+            font-size: 2.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .subtitle {
+            color: #6c757d;  /* Gris secondaire de Bootstrap */
+            font-size: 1.1rem;
+            font-weight: 400;
+            margin-bottom: 2rem;
+        }
+        .custom-header {
+            background-color: #1a237e   ;
+            color: white;
+        }
+        .premium-card-body {
+            transition: all 0.3s ease-in-out;
+            border: 1px dashed #1a237e;
+            background-color: #f8f9fa;
+            padding: 2rem;
+        }
+        .premium-card-body:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            cursor: pointer;
+        }
+        .premium-title {
+            color: #1a237e;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+        .premium-text {
+            font-size: 1.2rem;
+        }
+
+        #premium-content.blurred {
+            filter: blur(8px);
+            pointer-events: none;
+            user-select: none;
+            transition: filter 0.3s ease-in-out;
+        }
+
+        .premium-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.5);
+            z-index: 10;
+        }
+    </style>
+    <link rel="stylesheet" href="css/styles.css?v=1.1">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+</head>
+<body>
+    <div class="container py-5">
+        <div class="form-container mb-4" style="max-width: 800px; margin: 0 auto;">
+            <h1 class="text-center main-title">Simulateur de Réduction d'Impôts - Mécénat - Beyond Avocats</h1>
+            <h4 class="text-center subtitle">Estimez votre réduction d'impôt pour vos dons d'entreprise</h4>
+            
+            <form id="donationForm">
+                <div class="mb-3">
+                    <label class="form-label">Type d'association</label>
+                    <div class="d-flex align-items-center">
+                        <select class="form-select" id="associationType">
+                            <option value="general">Cas général</option>
+                            <option value="repas">Organismes fournissant des aides aux personnes en difficulté</option>
+                        </select>
+                        <i class="bi bi-info-circle info-icon ms-2" 
+                           data-bs-toggle="tooltip" 
+                           data-bs-html="true"
+                           data-bs-placement="right"
+                           title="Chargement..."></i>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="donationAmount" class="form-label">
+                        Montant du don (€)
+                        <i class="bi bi-info-circle info-icon ms-1" 
+                           data-bs-toggle="tooltip" 
+                           data-bs-placement="right"
+                           title="Montant total du don, qu'il soit financier ou en nature"></i>
+                    </label>
+                    <input type="text" class="form-control" id="donationAmount" required>
+                    <small class="form-text text-muted">Format : nombres uniquement, utilisez le point ou la virgule pour les décimales</small>
+                </div>
+
+                <div class="mb-3">
+                    <label for="turnover" class="form-label">
+                        Chiffre d'affaires annuel HT (€)
+                        <i class="bi bi-info-circle info-icon ms-1" 
+                           data-bs-toggle="tooltip" 
+                           data-bs-placement="right"
+                           title="Chiffre d'affaires HT de l'exercice en cours"></i>
+                    </label>
+                    <input type="text" class="form-control" id="turnover" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="resultatComptable" class="form-label">
+                        Résultat comptable avant don (€)
+                        <i class="bi bi-info-circle info-icon ms-1" 
+                           data-bs-toggle="tooltip" 
+                           data-bs-placement="right"
+                           title="Résultat comptable de l'exercice avant déduction du don"></i>
+                    </label>
+                    <input type="text" class="form-control" id="resultatComptable" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">Calculer la réduction</button>
+                
+                <div class="mt-3 text-center">
+                    <small class="text-muted">
+                        Ce calculateur est basé sur les articles 200 et 238 bis du Code Général des Impôts. 
+                        Les montants calculés sont donnés à titre indicatif et n'engagent pas le cabinet.
+                    </small>
+                </div>
+            </form>
+        </div>
+
+        <div id="results-wrapper" style="display: none; max-width: 800px; margin: 0 auto; position: relative;">
+            <div id="results" class="results-container">
+                <div class="card">
+                    <div class="card-header custom-header">
+                        <h5 class="card-title mb-0">Synthèse du don</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p>Montant du don : <span id="synthDon" class="fw-bold"></span></p>
+                                <p>Plafond de déduction : <span id="synthPlafond" class="fw-bold"></span></p>
+                                <p>Taux de réduction global : <span id="synthTaux" class="fw-bold"></span></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p>Réduction immédiate : <span id="synthReductionMecenat" class="fw-bold"></span></p>
+                                <p>Dépassement du plafond : <span id="synthDepassement" class="fw-bold"></span></p>
+                                <p>Réduction reportable : <span id="synthReductionReportable" class="fw-bold"></span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card my-4">
+                    <div class="card-header custom-header">
+                        <h5 class="card-title mb-0">Conséquences fiscales</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Le calcul de l'IS prend en compte le taux réduit de 15% jusqu'à 42 500€ de bénéfice, puis 25% au-delà.
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p>
+                                    Résultat comptable avant don : 
+                                    <span id="synthResultatAvant" class="fw-bold"></span>
+                                    <i class="bi bi-info-circle info-icon ms-1" 
+                                       data-bs-toggle="tooltip" 
+                                       data-bs-placement="right"
+                                       title="Résultat comptable de l'entreprise avant la déduction du don"></i>
+                                </p>
+                                <p>
+                                    Résultat fiscal après don : 
+                                    <span id="synthResultatApres" class="fw-bold"></span>
+                                    <i class="bi bi-info-circle info-icon ms-1" 
+                                       data-bs-toggle="tooltip" 
+                                       data-bs-placement="right"
+                                       title="Résultat fiscal après déduction du don, base de calcul de l'IS"></i>
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p>
+                                    IS avant don : 
+                                    <span id="synthISAvant" class="fw-bold"></span>
+                                    <i class="bi bi-info-circle info-icon ms-1" 
+                                       data-bs-toggle="tooltip" 
+                                       data-bs-placement="right"
+                                       title="Impôt sur les sociétés qui aurait été dû sans le don"></i>
+                                </p>
+                                <p>
+                                    IS après réduction : 
+                                    <span id="synthISApres" class="fw-bold"></span>
+                                    <i class="bi bi-info-circle info-icon ms-1" 
+                                       data-bs-toggle="tooltip" 
+                                       data-bs-placement="right"
+                                       title="IS final après application de la réduction mécénat"></i>
+                                </p>
+                                <p>
+                                    Économie d'IS totale : 
+                                    <span id="synthEconomieIS" class="fw-bold"></span>
+                                    <i class="bi bi-info-circle info-icon ms-1" 
+                                       data-bs-toggle="tooltip" 
+                                       data-bs-placement="right"
+                                       title="Différence entre l'IS avant don et l'IS après réduction"></i>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contenu Premium à flouter -->
+            <div id="premium-container" style="position: relative;">
+                <div id="premium-content">
+                    <div class="card my-4">
+                        <div class="card-header custom-header">
+                            <h5 class="card-title mb-0">Tableau de report de la réduction d'impôt</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-bordered text-center">
+                                <thead>
+                                    <tr>
+                                        <th>Année</th>
+                                        <th>Réduction d'impôt utilisée</th>
+                                        <th>Report de réduction restant</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reportTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card my-4">
+                        <div class="card-header custom-header">
+                            <h5 class="card-title mb-0">Visualisation de l'économie d'impôt</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="resultsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="premium-overlay" class="premium-overlay" style="display: none;">
+                    <div class="card premium-card-body text-center" style="max-width: 500px;">
+                        <h5 class="premium-title">Accédez à votre simulation complète</h5>
+                        <p class="text-muted">Pour débloquer le tableau de report détaillé et le graphique, recevez votre simulation personnalisée au format PDF.</p>
+                        <form id="pdfForm" class="row g-2 justify-content-center align-items-center">
+                            <div class="col-sm-8">
+                                <input type="email" class="form-control" id="userEmail" placeholder="votre.email@exemple.com" required>
+                            </div>
+                            <div class="col-sm-4">
+                                <button type="submit" class="btn btn-primary w-100">Recevoir</button>
+                            </div>
+                        </form>
+                        <div id="pdf-status" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="js/app.js?v=1.1"></script>
+</body>
+</html> 
